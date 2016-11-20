@@ -1,5 +1,9 @@
 module Protocol
 ( Message (..)
+, RequestJoin (..)
+, RequestLeave (..)
+, RequestDisconnect (..)
+, ChatMsg (..)
 , createConfirmJoin
 , createConfirmLeave
 , createChatMsg

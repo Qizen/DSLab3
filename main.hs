@@ -2,6 +2,7 @@ module Main where
 
 import Network.Socket
 import Data.List.Split
+import Data.Char
 import System.Exit
 import System.Environment
 import Control.Concurrent
@@ -9,6 +10,7 @@ import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
+import Protocol
 
 type Msg = String
 
@@ -44,7 +46,7 @@ mainLoop sock chan = do
         "KILL" -> killConn sock
         _ -> mainLoop sock chan
 
--- conDispatchLoop handles dispatching jobs to the thread pool
+-- connDispatchLoop handles dispatching jobs to the thread pool
 connDispatchLoop :: Socket -> Chan Msg -> IO ()
 connDispatchLoop sock chan = do
     threadQueue <- atomically $ newTQueue
@@ -52,14 +54,31 @@ connDispatchLoop sock chan = do
     forever $ do
         --accept a connection
         conn <- accept sock
-        atomically $ writeTQueue threadQueue (conn, chan)
+        aChan <- dupChan chan
+        atomically $ writeTQueue threadQueue (conn, aChan)
 
 -- runConn processes messages received from a socket
 runConn :: ((Socket, SockAddr), Chan Msg) -> IO ()
 runConn ((sock, sockAddr), chan) = do
+    rooms <- newEmptyMVar
+    putMVar rooms []
     putStrLn "in Runn Conn"
-    eitherMsg <- try $ recv sock 1024
-    case eitherMsg of 
+    aChan <- dupChan chan
+    
+    -- spawn a thread which will send things on the chan to clients
+    forkIO (forever $ do
+                  line <- readChan aChan
+                  m <- takeMVar rooms
+                  --TODO if m contains the room from the line on the chan
+                  putStrLn $ "line: " ++ line
+                  send sock line
+                  putMVar rooms m)
+    connLoop ((sock, sockAddr), chan)
+
+connLoop :: ((Socket, SockAddr), Chan Msg) -> IO ()
+connLoop ((sock, sockAddr), chan) = do
+     eitherMsg <- try $ recv sock 1024
+     case eitherMsg of 
         Left e -> putStrLn $ "SOCKET ERR: " ++ show (e :: IOException)
         Right msg -> do
             let split = words msg
@@ -68,8 +87,39 @@ runConn ((sock, sockAddr), chan) = do
                 x:xs -> case x of
                     "KILL_SERVICE" -> writeChan chan "KILL"
                     "HELO" -> processHelo (sock, sockAddr, msg)
-                    _ -> return () --process other messages here    
-            runConn ((sock, sockAddr), chan)
+                    "msg" ->writeChan chan $ "### " ++ unwords xs ++ "\n"
+                    --TODO Change this to something sensible
+                    _ -> parseCmd sock chan msg
+                    --_ -> return () --process other messages here    
+            connLoop ((sock, sockAddr), chan)
+
+parseCmd :: Socket -> Chan Msg -> String -> IO ()
+parseCmd sock chan cmd = do
+    fullCmd <- recvWhile (\str -> any (==True) (map (not.isSpace) str)) cmd sock
+    putStrLn fullCmd
+    case (parseMsgString fullCmd) of
+        Just (Join a) -> do 
+                    let msg = createConfirmJoin (joinChatRmName a) (joinClientIp a) (show (joinPort a)) (joinClientName a)
+                    send sock msg 
+                    putStrLn "Join\n"
+                    
+        Just (Chat b) -> do 
+                    putStrLn "Chat\n"
+                    let str = createChatMsg (show (chatChatRmId b)) (chatClientName b) (chatMessage b)
+                    --putStrLn ("ID: " ++ show (chatChatRmId b))
+                    --putStrLn ("NM: " ++ (chatClientName b))
+                    --putStrLn ("MS: " ++ (chatMessage b))
+                    --putStrLn str
+                    writeChan chan str    
+        _ -> putStrLn "not join"
+
+recvWhile :: (String -> Bool) -> String -> Socket -> IO String
+recvWhile func str sock = do
+    eitherMsg <- try $ recv sock 1024
+    case eitherMsg of
+        Left e-> return $ "SOCKETERROR" ++ show (e :: IOException) 
+        Right msg -> if func msg then recvWhile func (str ++ msg) sock
+                     else return str
 
 -- killConn kills the service
 killConn :: Socket -> IO ()
