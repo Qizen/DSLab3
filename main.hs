@@ -124,7 +124,8 @@ connLoop serv@ServerState{servSocket=sock, servChan = chan} cliSock cliId= do
 
 parseCmd :: ServerState -> Socket -> Int -> String -> IO ()
 parseCmd serv@ServerState{servSocket = sock, servChan = chan} cliSock cliId cmd = do
-    fullCmd <- recvWhile (\str -> any (==True) (map (not.isSpace) str)) cmd cliSock
+    --fullCmd <- recvWhile (\str -> any (==True) (map (not.isSpace) str)) cmd cliSock
+    let fullCmd = cmd    
     putStrLn fullCmd
     case (parseMsgString fullCmd) of
         Just (Join a) -> do 
@@ -133,11 +134,6 @@ parseCmd serv@ServerState{servSocket = sock, servChan = chan} cliSock cliId cmd 
         Just (Chat b) -> do 
                     putStrLn "Chat\n"
                     let str = createChatMsg (show (chatChatRmId b)) (chatClientName b) (chatMessage b)
-                    --putStrLn ("ID: " ++ show (chatChatRmId b))
-                    --putStrLn ("NM: " ++ (chatClientName b))
-                    --putStrLn ("MS: " ++ (chatMessage b))
-                    --putStrLn str
-                    --writeChan chan str
                     sendToRoom serv (chatChatRmId b) str    
         _ -> putStrLn "not join"
 
