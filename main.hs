@@ -174,6 +174,7 @@ handleJoin serv@ServerState{servSocket = sock,roomNames = rmNames, nextRmId = ne
 
     let msg = createConfirmJoin (jRmName) (jIp) (show (jPort)) (show unwrappedRmId) (jName)
     send cliSock msg 
+    putStrLn msg
     let joinString = jName ++ " has joined " ++ jRmName ++ "\n"     
     sendToRoom serv unwrappedRmId joinString
     putStrLn "Join\n"
