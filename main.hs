@@ -137,7 +137,8 @@ parseCmd serv@ServerState{servSocket = sock, servChan = chan} cliSock cliId cmd 
                     --putStrLn ("NM: " ++ (chatClientName b))
                     --putStrLn ("MS: " ++ (chatMessage b))
                     --putStrLn str
-                    writeChan chan str    
+                    --writeChan chan str
+                    sendToRoom serv (chatChatRmId b) str    
         _ -> putStrLn "not join"
 
 recvWhile :: (String -> Bool) -> String -> Socket -> IO String
