@@ -69,18 +69,18 @@ createConfirmJoin chatRmName ip port chatRmId clientId =
 createConfirmLeave :: String -> String -> String 
 createConfirmLeave chatRmId clientId = 
     "LEFT_CHATROOM:"   ++ chatRmId ++ "\n\
-    \JOIN_ID:"          ++ clientId ++ "\n\n"
+    \JOIN_ID:"          ++ clientId ++ "\n"
 
 createChatMsg :: String -> String -> String -> String
 createChatMsg chatRmId clientName msg = 
     "CHAT: "    ++ chatRmId ++ "\n\
     \CLIENT_NAME: " ++ clientName    ++ "\n\
-    \MESSAGE: " ++ msg ++ "\n\n"
+    \MESSAGE: " ++ msg ++ "\n"
 
 errorMsg :: String -> String -> String
 errorMsg code msg =
     "ERROR_CODE: "          ++ code ++ "\n\
-    \ERROR_DESCRIPTION: "    ++ msg  ++ "\n\n"
+    \ERROR_DESCRIPTION: "    ++ msg  ++ "\n"
 
 parseMsgString :: String -> Maybe (Message  RequestJoin RequestLeave RequestDisconnect ChatMsg)
 parseMsgString msgString 

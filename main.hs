@@ -110,6 +110,7 @@ connLoop serv@ServerState{servSocket=sock, servChan = chan} cliSock cliId= do
      case eitherMsg of 
         Left e -> putStrLn $ "SOCKET ERR: " ++ show (e :: IOException) -- should decrement numClis here
         Right msg -> do
+            putStrLn $ "#####R#####\n "++msg++"#####E#####\n"
             let split = words msg
             case split of
                 [] -> return ()
@@ -126,7 +127,7 @@ parseCmd :: ServerState -> Socket -> Int -> String -> IO ()
 parseCmd serv@ServerState{servSocket = sock, servChan = chan} cliSock cliId cmd = do
     --fullCmd <- recvWhile (\str -> any (==True) (map (not.isSpace) str)) cmd cliSock
     let fullCmd = cmd    
-    putStrLn fullCmd
+    putStrLn $ "RECVD: " ++ fullCmd ++ "END\n"
     case (parseMsgString fullCmd) of
         Just (Join a) -> do 
                     handleJoin serv cliSock cliId a
