@@ -61,10 +61,10 @@ chatTypes = ["int" , "int"    , "str"        , "str"    ]
 createConfirmJoin :: String -> String -> String -> String -> String -> String
 createConfirmJoin chatRmName ip port chatRmId clientId =
     "JOINED_CHATROOM: " ++ chatRmName   ++ "\n\
-    \SERVER_IP: "        ++ ip           ++ "\n\
-    \PORT: "             ++ port         ++ "\n\
-    \ROOM_REF: "         ++ chatRmId     ++ "\n\
-    \JOIN_ID: "          ++ clientId     ++ "\n\n"
+    \SERVER_IP:"        ++ ip           ++ "\n\
+    \PORT:"             ++ port         ++ "\n\
+    \ROOM_REF:"         ++ chatRmId     ++ "\n\
+    \JOIN_ID:"          ++ clientId     ++ "\n\n"
 
 createConfirmLeave :: String -> String -> String 
 createConfirmLeave chatRmId clientId = 
