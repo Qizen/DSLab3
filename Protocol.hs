@@ -64,12 +64,12 @@ createConfirmJoin chatRmName ip port chatRmId clientId =
     \SERVER_IP:"        ++ ip           ++ "\n\
     \PORT:"             ++ port         ++ "\n\
     \ROOM_REF:"         ++ chatRmId     ++ "\n\
-    \JOIN_ID:"          ++ clientId     ++ "\n\n"
+    \JOIN_ID:"          ++ clientId     ++ "\n"
 
 createConfirmLeave :: String -> String -> String 
 createConfirmLeave chatRmId clientId = 
-    "LEFT_CHATROOM: "   ++ chatRmId ++ "\n\
-    \JOIN_ID: "          ++ clientId ++ "\n\n"
+    "LEFT_CHATROOM:"   ++ chatRmId ++ "\n\
+    \JOIN_ID:"          ++ clientId ++ "\n\n"
 
 createChatMsg :: String -> String -> String -> String
 createChatMsg chatRmId clientName msg = 

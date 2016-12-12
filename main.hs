@@ -135,6 +135,8 @@ parseCmd serv@ServerState{servSocket = sock, servChan = chan} cliSock cliId cmd 
                     putStrLn "Chat\n"
                     let str = createChatMsg (show (chatChatRmId b)) (chatClientName b) (chatMessage b)
                     sendToRoom serv (chatChatRmId b) str    
+        Just (Leave c) -> do
+                    handleLeave serv cliSock cliId c
         _ -> putStrLn "not join"
 
 recvWhile :: (String -> Bool) -> String -> Socket -> IO String
@@ -168,20 +170,42 @@ handleJoin serv@ServerState{servSocket = sock,roomNames = rmNames, nextRmId = ne
     putStrLn $ "added " ++ (show cliId) ++ "\n"
     
     --get Server IP and Port
-   {- ourSockAddr <- getSocketName sock
-    port <- socketPort sock
-    (Just ourAddr, _) <- getNameInfo [NI_NUMERICHOST] True False ourSockAddr -}
+    ourSockAddr <- getSocketName cliSock
+    port <- socketPort cliSock
+    (Just ourAddr, _) <- getNameInfo [NI_NUMERICHOST] True False ourSockAddr
 
-    let msg = createConfirmJoin (jRmName) (jIp) (show (jPort)) (show unwrappedRmId) (jName)
+    let msg = createConfirmJoin (jRmName)  (ourAddr) (show (port)) (show unwrappedRmId) (show cliId)
     send cliSock msg 
     putStrLn msg
-    let joinString = jName ++ " has joined " ++ jRmName ++ "\n"     
-    sendToRoom serv unwrappedRmId joinString
+    let joinString = jName ++ " has joined " ++ jRmName ++ "\n"
+    let joinMsg = createChatMsg (show unwrappedRmId) (jName) joinString     
+    sendToRoom serv unwrappedRmId joinMsg
     putStrLn "Join\n"
     where   jRmName = joinChatRmName joinMsg
             jIp = joinClientIp joinMsg
             jPort = joinPort joinMsg
             jName = joinClientName joinMsg
+
+-- Handle the leave message
+handleLeave :: ServerState -> Socket -> Int -> RequestLeave -> IO ()
+handleLeave serv@ServerState{roomClients = rmClis, roomNames=rmNames} cliSock cliId leaveMsg = do
+    -- send client the left message
+    let msg = createConfirmLeave (show lRmId)(show lCliId)
+    send cliSock msg
+
+    -- send all clients the leaving notification
+    -- TODO should probably send room name in the notification instead of Id
+    let leaveNotification = createChatMsg (show lRmId) lCliName (lCliName ++ " has left " ++ show(lRmId))
+    sendToRoom serv lRmId leaveNotification
+
+    -- remove client from room
+    atomically $ do modifyTVar' rmClis (map (\a->if (fst a) ==1 then (fst a, (filter (not.(==1)) (snd a))) else a)) 
+
+    return ()
+    where  lRmId = leaveChatRmId leaveMsg
+           lCliId = leaveClientId leaveMsg
+           lCliName = leaveClientName leaveMsg
+    
 
 sendToRoom :: ServerState -> Int -> String -> IO ()
 sendToRoom serv@ServerState{roomClients = rmClis, clientSockets = cliSocks} roomId msg = do
