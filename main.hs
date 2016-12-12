@@ -147,7 +147,7 @@ recvWhile func str sock = do
 
 -- Handle the join message
 handleJoin :: ServerState -> Socket -> Int -> RequestJoin -> IO ()
-handleJoin serv@ServerState{roomNames = rmNames, nextRmId = nextRm, roomClients = rmClis, clientSockets = cliSocks} cliSock cliId joinMsg = do
+handleJoin serv@ServerState{servSocket = sock, roomNames = rmNames, nextRmId = nextRm, roomClients = rmClis, clientSockets = cliSocks} cliSock cliId joinMsg = do
     --getOrCreateChatRm    
     rms <- atomically $ readTVar rmNames
     putStrLn $ "Rms " ++ show rms
@@ -166,8 +166,13 @@ handleJoin serv@ServerState{roomNames = rmNames, nextRmId = nextRm, roomClients 
     --addClientToRoom
     atomically $ do modifyTVar' rmClis (map (\a->if fst a == unwrappedRmId then ((fst a), cliId:(snd a)) else a))
     putStrLn $ "added " ++ (show cliId) ++ "\n"
+    
+    --get Server IP and Port
+    ourSockAddr <- getSocketName sock
+    port <- socketPort sock
+    (Just ourAddr, _) <- getNameInfo [NI_NUMERICHOST] True False ourSockAddr 
 
-    let msg = createConfirmJoin (jRmName) (jIp) (show (jPort)) (show unwrappedRmId) (jName)
+    let msg = createConfirmJoin (jRmName) (show ourAddr) (show (port)) (show unwrappedRmId) (jName)
     send cliSock msg 
     let joinString = jName ++ " has joined " ++ jRmName ++ "\n"     
     sendToRoom serv unwrappedRmId joinString
