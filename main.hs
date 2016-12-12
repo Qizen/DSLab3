@@ -147,7 +147,7 @@ recvWhile func str sock = do
 
 -- Handle the join message
 handleJoin :: ServerState -> Socket -> Int -> RequestJoin -> IO ()
-handleJoin serv@ServerState{servSock = sock,roomNames = rmNames, nextRmId = nextRm, roomClients = rmClis, clientSockets = cliSocks} cliSock cliId joinMsg = do
+handleJoin serv@ServerState{servSocket = sock,roomNames = rmNames, nextRmId = nextRm, roomClients = rmClis, clientSockets = cliSocks} cliSock cliId joinMsg = do
     --getOrCreateChatRm    
     rms <- atomically $ readTVar rmNames
     putStrLn $ "Rms " ++ show rms
