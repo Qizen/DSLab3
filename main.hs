@@ -167,10 +167,10 @@ handleJoin serv@ServerState{roomNames = rmNames, nextRmId = nextRm, roomClients 
     atomically $ do modifyTVar' rmClis (map (\a->if fst a == unwrappedRmId then ((fst a), cliId:(snd a)) else a))
     putStrLn $ "added " ++ (show cliId) ++ "\n"
 
-    let joinString = jName ++ " has joined " ++ jRmName ++ "\n"     
-    sendToRoom serv unwrappedRmId joinString
     let msg = createConfirmJoin (jRmName) (jIp) (show (jPort)) (show unwrappedRmId) (jName)
     send cliSock msg 
+    let joinString = jName ++ " has joined " ++ jRmName ++ "\n"     
+    sendToRoom serv unwrappedRmId joinString
     putStrLn "Join\n"
     where   jRmName = joinChatRmName joinMsg
             jIp = joinClientIp joinMsg
